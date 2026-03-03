@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIMECLOCK</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --panel: #161616;
+    --border: #2a2a2a;
+    --accent: #f5a623;
+    --accent-dim: #7a5010;
+    --green: #39ff14;
+    --red: #ff3333;
+    --text: #d0d0d0;
+    --muted: #555;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image: 
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px);
+  }
+
+  .container {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    letter-spacing: 12px;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(245,166,35,0.3);
+  }
+
+  .header .sub {
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .clock-display {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    padding: 32px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .clock-display::before {
+    content: 'CURRENT TIME';
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--panel);
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--accent);
+  }
+
+  #live-clock {
+    font-size: 52px;
+    text-align: center;
+    letter-spacing: 4px;
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+  }
+
+  #live-date {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    margin-top: 6px;
+  }
+
+  .status-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px 32px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .status-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .status-value {
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    margin-right: 8px;
+    animation: none;
+  }
+
+  .status-dot.active {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .btn {
+    width: 100%;
+    padding: 22px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .btn-in {
+    background: var(--green);
+    color: #000;
+  }
+
+  .btn-in:hover {
+    background: #5fff3a;
+    box-shadow: 0 0 30px rgba(57,255,20,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-out {
+    background: var(--red);
+    color: #fff;
+  }
+
+  .btn-out:hover {
+    background: #ff5555;
+    box-shadow: 0 0 30px rgba(255,51,51,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .result-panel {
+    background: var(--panel);
+    border: 1px solid var(--accent-dim);
+    border-left: 4px solid var(--accent);
+    padding: 28px 32px;
+    margin-top: 8px;
+    display: none;
+    animation: slideIn 0.3s ease;
+  }
+
+  .result-panel.show {
+    display: block;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .result-item .label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .result-item .value {
+    font-size: 28px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 2px;
+  }
+
+  .result-item .value.big {
+    color: var(--accent);
+    font-size: 40px;
+    text-shadow: 0 0 20px rgba(245,166,35,0.3);
+  }
+
+  .history {
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+  }
+
+  .history-header {
+    padding: 12px 20px;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .history-clear {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .history-clear:hover { color: var(--red); }
+
+  .history-empty {
+    padding: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  .history-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .history-item:last-child { border-bottom: none; }
+
+  .history-item .hi-date { color: var(--muted); font-size: 11px; }
+  .history-item .hi-hours { color: var(--text); letter-spacing: 1px; }
+  .history-item .hi-pay { color: var(--accent); letter-spacing: 1px; }
+
+  .rate-info {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>TIMECLOCK</h1>
+    <div class="sub">Employee Time Tracking System</div>
+  </div>
+
+  <div class="clock-display">
+    <div id="live-clock">00:00:00</div>
+    <div id="live-date">--</div>
+  </div>
+
+  <div class="status-panel">
+    <div>
+      <div class="status-label">Status</div>
+      <div class="status-value"><span class="status-dot" id="status-dot"></span><span id="status-text">CLOCKED OUT</span></div>
+    </div>
+    <div style="text-align:right">
+      <div class="status-label">Clocked In At</div>
+      <div class="status-value" id="clocked-in-at">--:--:--</div>
+    </div>
+    <div style="text-align:right">
+      <div class="status-label">Elapsed</div>
+      <div class="status-value" id="elapsed-time">--:--:--</div>
+    </div>
+  </div>
+
+  <button class="btn btn-in" id="btn-in" onclick="clockIn()">CLOCK IN</button>
+  <button class="btn btn-out" id="btn-out" onclick="clockOut()" disabled>CLOCK OUT</button>
+
+  <div class="result-panel" id="result-panel">
+    <div class="result-label">▸ Session Summary</div>
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="label">CLOCK IN</div>
+        <div class="value" id="r-in">--</div>
+      </div>
+      <div class="result-item">
+        <div class="label">CLOCK OUT</div>
+        <div class="value" id="r-out">--</div>
+      </div>
+      <div class="result-item">
+        <div class="label">HOURS WORKED</div>
+        <div class="value" id="r-hours">--</div>
+      </div>
+      <div class="result-item">
+        <div class="label">TOTAL EARNINGS</div>
+        <div class="value big" id="r-pay">--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history" id="history-panel">
+    <div class="history-header">
+      <span>SESSION HISTORY</span>
+      <button class="history-clear" onclick="clearHistory()">CLEAR</button>
+    </div>
+    <div id="history-list"><div class="history-empty">No sessions recorded yet.</div></div>
+  </div>
+
+  <div class="rate-info">RATE: $13.00 / HR</div>
+</div>
+
+<script>
+const RATE = 13;
+let clockInTime = null;
+let elapsedInterval = null;
+let sessions = JSON.parse(localStorage.getItem('tc_sessions') || '[]');
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function formatTime(date) {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function formatDate(date) {
+  const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  return `${days[date.getDay()]} ${pad(date.getDate())} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function formatElapsed(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+// Live clock
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('live-clock').textContent = formatTime(now);
+  document.getElementById('live-date').textContent = formatDate(now);
+  if (clockInTime) {
+    document.getElementById('elapsed-time').textContent = formatElapsed(now - clockInTime);
+  }
+}, 1000);
+
+// Init clock
+(function() {
+  const now = new Date();
+  document.getElementById('live-clock').textContent = formatTime(now);
+  document.getElementById('live-date').textContent = formatDate(now);
+})();
+
+function clockIn() {
+  clockInTime = new Date();
+  document.getElementById('btn-in').disabled = true;
+  document.getElementById('btn-out').disabled = false;
+  document.getElementById('status-text').textContent = 'CLOCKED IN';
+  document.getElementById('status-dot').classList.add('active');
+  document.getElementById('clocked-in-at').textContent = formatTime(clockInTime);
+  document.getElementById('elapsed-time').textContent = '00:00:00';
+  document.getElementById('result-panel').classList.remove('show');
+}
+
+function clockOut() {
+  if (!clockInTime) return;
+  const outTime = new Date();
+  const ms = outTime - clockInTime;
+  const hours = ms / 3600000;
+  const pay = hours * RATE;
+
+  document.getElementById('btn-in').disabled = false;
+  document.getElementById('btn-out').disabled = true;
+  document.getElementById('status-text').textContent = 'CLOCKED OUT';
+  document.getElementById('status-dot').classList.remove('active');
+  document.getElementById('clocked-in-at').textContent = '--:--:--';
+  document.getElementById('elapsed-time').textContent = '--:--:--';
+
+  // Show result
+  document.getElementById('r-in').textContent = formatTime(clockInTime);
+  document.getElementById('r-out').textContent = formatTime(outTime);
+  document.getElementById('r-hours').textContent = hours.toFixed(2) + ' HRS';
+  document.getElementById('r-pay').textContent = '$' + pay.toFixed(2);
+  document.getElementById('result-panel').classList.add('show');
+
+  // Save to history
+  sessions.unshift({
+    date: formatDate(clockInTime),
+    inT: formatTime(clockInTime),
+    outT: formatTime(outTime),
+    hours: hours.toFixed(2),
+    pay: pay.toFixed(2)
+  });
+  if (sessions.length > 20) sessions.pop();
+  localStorage.setItem('tc_sessions', JSON.stringify(sessions));
+  renderHistory();
+
+  clockInTime = null;
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (sessions.length === 0) {
+    list.innerHTML = '<div class="history-empty">No sessions recorded yet.</div>';
+    return;
+  }
+  list.innerHTML = sessions.map(s => `
+    <div class="history-item">
+      <div>
+        <div>${s.inT} → ${s.outT}</div>
+        <div class="hi-date">${s.date}</div>
+      </div>
+      <div class="hi-hours">${s.hours}h</div>
+      <div class="hi-pay">$${s.pay}</div>
+    </div>
+  `).join('');
+}
+
+function clearHistory() {
+  sessions = [];
+  localStorage.setItem('tc_sessions', '[]');
+  renderHistory();
+}
+
+renderHistory();
+</script>
+</body>
+</html>
