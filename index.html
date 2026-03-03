@@ -297,13 +297,71 @@
   .history-item .hi-hours { color: var(--text); letter-spacing: 1px; }
   .history-item .hi-pay { color: var(--accent); letter-spacing: 1px; }
 
-  .rate-info {
-    text-align: center;
+  .rate-panel {
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+  }
+
+  .rate-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .rate-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rate-dollar, .rate-suffix {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+
+  #rate-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    padding: 6px 10px;
+    width: 110px;
+    letter-spacing: 2px;
+    outline: none;
+  }
+
+  #rate-input:focus { border-color: var(--accent); }
+
+  .rate-save-btn {
+    background: none;
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .rate-save-btn:hover {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .rate-saved-msg {
     font-size: 10px;
     letter-spacing: 3px;
-    color: var(--muted);
-    margin-top: 16px;
+    color: var(--green);
+    margin-top: 8px;
+    min-height: 16px;
   }
+
 </style>
 </head>
 <body>
@@ -367,19 +425,41 @@
     <div id="history-list"><div class="history-empty">No sessions recorded yet.</div></div>
   </div>
 
-  <div class="rate-info">RATE: $13.00 / HR</div>
+  <div class="rate-panel">
+    <div class="rate-label">HOURLY RATE</div>
+    <div class="rate-input-row">
+      <span class="rate-dollar">$</span>
+      <input type="number" id="rate-input" min="0" step="0.01" placeholder="13.00" />
+      <span class="rate-suffix">/ HR</span>
+      <button class="rate-save-btn" onclick="saveRate()">SAVE</button>
+    </div>
+    <div class="rate-saved-msg" id="rate-saved-msg"></div>
+  </div>
 </div>
 
 <script>
-const RATE = 13;
+let RATE = parseFloat(localStorage.getItem('tc_rate') || '13');
 let clockInTime = null;
 let elapsedInterval = null;
 let sessions = JSON.parse(localStorage.getItem('tc_sessions') || '[]');
 
+function saveRate() {
+  const val = parseFloat(document.getElementById('rate-input').value);
+  if (isNaN(val) || val < 0) return;
+  RATE = val;
+  localStorage.setItem('tc_rate', val.toString());
+  const msg = document.getElementById('rate-saved-msg');
+  msg.textContent = `✓ SAVED AT $${val.toFixed(2)}/HR`;
+  setTimeout(() => { msg.textContent = ''; }, 2500);
+}
+
 function pad(n) { return String(n).padStart(2,'0'); }
 
 function formatTime(date) {
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  let h = date.getHours();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${pad(h)}:${pad(date.getMinutes())}:${pad(date.getSeconds())} ${ampm}`;
 }
 
 function formatDate(date) {
@@ -411,6 +491,7 @@ setInterval(() => {
   const now = new Date();
   document.getElementById('live-clock').textContent = formatTime(now);
   document.getElementById('live-date').textContent = formatDate(now);
+  document.getElementById('rate-input').value = RATE.toFixed(2);
 })();
 
 function clockIn() {
