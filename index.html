@@ -495,10 +495,25 @@ setInterval(() => {
   document.getElementById('live-clock').textContent = formatTime(now);
   document.getElementById('live-date').textContent = formatDate(now);
   document.getElementById('rate-input').value = RATE.toFixed(2);
+  
+  // Check if user was already clocked in from a previous session
+  const savedClockIn = localStorage.getItem('tc_clockIn');
+  if (savedClockIn) {
+    clockInTime = new Date(savedClockIn);
+    
+    // Restore UI to clocked-in state
+    document.getElementById('btn-in').disabled = true;
+    document.getElementById('btn-out').disabled = false;
+    document.getElementById('status-text').textContent = 'CLOCKED IN';
+    document.getElementById('status-dot').classList.add('active');
+    document.getElementById('clocked-in-at').textContent = formatTime(clockInTime);
+  }
 })();
 
 function clockIn() {
   clockInTime = new Date();
+  localStorage.setItem('tc_clockIn', clockInTime.toISOString()); // Save to local storage
+  
   document.getElementById('btn-in').disabled = true;
   document.getElementById('btn-out').disabled = false;
   document.getElementById('status-text').textContent = 'CLOCKED IN';
@@ -514,6 +529,9 @@ function clockOut() {
   const ms = outTime - clockInTime;
   const hours = ms / 3600000;
   const pay = hours * RATE;
+
+  // Clear from local storage
+  localStorage.removeItem('tc_clockIn');
 
   document.getElementById('btn-in').disabled = false;
   document.getElementById('btn-out').disabled = true;
